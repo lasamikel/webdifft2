@@ -4,7 +4,7 @@
 $mysql_host = "localhost";
 $mysql_user = "root";
 $mysql_pass = "";
-$mysql_db = "BDweb";
+$mysql_db = "bdweb";
 
 //Gallery
 $enpresa = "Proiektua";

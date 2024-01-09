@@ -12,18 +12,26 @@
 }*/
 
 if(isset($_GET['postdescription'])){
-    $crntquery = mysqli_query($conx,"SELECT deskripzioa, salneurria FROM produktuak WHERE ID LIKE ".$_GET['pic_id']);
-    $crntcomm = mysqli_fetch_array($crntquery);
 
-   $deskripzioa = $_POST['deskripzioa'];
+    $stmt = $conx->prepare("SELECT deskripzioa, salneurria FROM produktuak WHERE ID LIKE ?");
+    $stmt->bind_param("i", $_GET['pic_id']);
+    $stmt->execute();
+    $stmt->bind_result($deskripzioa, $salneurria);
+    $stmt->fetch();
+    $stmt->close();
+
+    $deskripzioa = htmlspecialchars($_POST['deskripzioa'], ENT_QUOTES, 'UTF-8');
 
     if ($_POST['salneurria'] != '') {
-        $salneurria = $_POST['salneurria'];
-    }else{
-        $salneurria = $crntcomm['salneurria'];
+        $salneurria = htmlspecialchars($_POST['salneurria'], ENT_QUOTES, 'UTF-8');
     }
 
-    mysqli_query($conx,"UPDATE produktuak SET deskripzioa = '".$deskripzioa."', salneurria = ".$salneurria." WHERE ID LIKE ".$_GET['pic_id']);
+    $stmt = $conx->prepare("UPDATE produktuak SET deskripzioa = ?, salneurria = ? WHERE ID LIKE ?");
+    $stmt->bind_param("sdi", $deskripzioa, $salneurria, $_GET['pic_id']);
+    $stmt->execute();
+    $stmt->close();
+
+    
 
     header("Location: ".$_SERVER['PHP_SELF']);
   
@@ -37,11 +45,15 @@ if(isset($_GET['postdescription'])){
     <br>
     <?php
 
-        $picquery = mysqli_query($conx,"SELECT * FROM produktuak WHERE ID = ".$_GET['pic_id']);
-        $data = mysqli_fetch_array($picquery);
+        $stmt = $conx->prepare("SELECT * FROM produktuak WHERE ID =?");
+        $stmt->bind_param("i", $_GET['pic_id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = $result->fetch_assoc();
+        $stmt->close();
 
-        echo "<h4>".$data['izena']." - ".$data['salneurria']."€</h4>";
-        echo "<img src=images/".$data['pic']." border=1><br>";
+        echo "<h4>" . htmlentities($data['izena']) . " - " . htmlentities($data['salneurria']) . "€</h4>";
+        echo "<img src=images/" . htmlentities($data['pic']) . " border=1><br>";
 
     ?>
     <br>

@@ -2,17 +2,22 @@
 $search="";
 $testua="";
 if (isset($_GET['keyword']) && $_GET['keyword'] != '') {
-    $testua = $_GET['keyword'];
+    $testua = htmlspecialchars($_GET['keyword'], ENT_QUOTES, 'UTF-8');
 }
-$search = "'%" . $testua . "%'";
+// $search = "%" . $testua . "%";
+$search = "%$testua%";
 
 
-$stmt = mysqli_query($conx,"SELECT * FROM produktuak WHERE ". "izena LIKE " . $search . " OR "
-			  . "deskripzioa LIKE " . $search );
+
+$stmt = $conx->prepare("SELECT * FROM produktuak WHERE izena LIKE ? OR deskripzioa LIKE ?");
+$stmt->bind_param("ss", $search, $search);
+$stmt->execute();
+$result = $stmt->get_result();
 $produktuak = array();
-while ($row = mysqli_fetch_array($stmt)) {
+while ($row = $result->fetch_assoc()) {
     $produktuak[] = $row;
 }
+$stmt->close();
 
 if(sizeof($produktuak) == 0){
     echo "<fieldset style=width:500;>";
@@ -45,13 +50,14 @@ else{
                 <fieldset>
                     <legend><b>Izena</b></legend>
                     <br>
-                    <?php echo $data['izena']; echo " - ".$data['salneurria']. "€";?>
+                    <?php echo htmlspecialchars($data['izena'], ENT_QUOTES, 'UTF-8');
+; echo " - ".htmlspecialchars($data['salneurria'], ENT_QUOTES, 'UTF-8'). "€";?>
                     <br>
                 </fieldset>
                 <fieldset>
                     <legend><b>Deskripzioa</b></legend>
                     <br>
-                    <?php echo $data['deskripzioa']; ?>
+                    <?php echo htmlspecialchars($data['deskripzioa'], ENT_QUOTES, 'UTF-8'); ?>
                     <br>
                 </fieldset>
                 <br>

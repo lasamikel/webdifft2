@@ -1,17 +1,31 @@
 <?php
 // assign defaults
-$data = array('email' 		=> 'email',
-			  'firstname' 	=> 'nombre',
-			  'lastname' 	=> 'apellidos',
-			  'postcode' 	=> 'codigo postal',
-			  'city' 		=> 'ciudad',
-			  'stateProv' 	=> 'provincia',
-			  'country'		=> 'pais',
-			  'telephone' 	=> 'telefono',
-			  'password' 	=> 'contraseña',
-			  'password2' 	=> 'repetir contraseña',
+
+// $email="";
+// $izena="";
+// $abizena="";
+// $hiria="";
+// $lurraldea="";
+// $herrialdea="";
+// $postakodea="";
+// $telefono="";
+// $pasahitza="";
+// $pasahitza_errepikatu="";
+
+
+$data = array('email' 		=> '',
+			  'firstname' 	=> '',
+			  'lastname' 	=> '',
+			  'postcode' 	=> '',
+			  'city' 		=> '',
+			  'stateProv' 	=> '',
+			  'country'		=> '',
+			  'telephone' 	=> '',
+			  'password' 	=> '',
+			  'password2' 	=> '',
 			  'imagen'      => ''
 );
+
 $error = array('email' 	  => '',
 			  'firstname' => '',
 			  'lastname'  => '',
@@ -22,32 +36,80 @@ $error = array('email' 	  => '',
 			  'telephone' => '',
 			  'password'  => '',
 );
-if (isset($_POST['data'])) {
+
+if (isset($_POST['data']["submit"])) {
 	$data = $_POST['data'];
 
     $path = "perfiles/".basename($_FILES['imagen']['name']);
     move_uploaded_file($_FILES['imagen']['tmp_name'], $path);
     $data['imagen'] = basename($_FILES['imagen']['name']);
 
-    $sql = "INSERT INTO users(username, password, izena, abizena, hiria, lurraldea, herrialdea, postakodea, telefonoa, irudia) VALUES (";
-    $sql .= "'" . $data['email'] . "', ";
-    $sql .= "'" . md5($data['password'] ). "', ";
-    $sql .= "'" . $data['firstname'] . "', ";
-    $sql .= "'" . $data['lastname'] . "', ";
-    $sql .= "'" . $data['city'] . "', ";
-    $sql .= "'" . $data['stateProv'] . "', ";
-    $sql .= "'" . $data['country'] . "', ";
-    $sql .= "'" . $data['postcode'] . "', ";
-    $sql .= "'" . $data['telephone'] . "', ";
-    $sql .= "'" . $data['imagen']. "')";
-    if (!mysqli_query($conx,"$sql"))
-    {
-        die('Error: ' . mysqli_error());
-    }
-    else {
-        header("Location: index.php");
-    }
+	
+	$data["email"] = htmlspecialchars($data["email"], ENT_QUOTES, 'UTF-8');
+    if (!filter_var($data["email"], FILTER_VALIDATE_EMAIL)){
+        $error["email"] = "Error en el campo email";
+    } 
+
+	$data["firstname"] = htmlspecialchars($data["firstname"], ENT_QUOTES, 'UTF-8'); 
+    if (!preg_match('/^[a-zA-Z]+$/',$data["firstname"])){
+        $error["firstname"] = "Error en el campo izena";
+    } 
+
+	$data["lastname"] = htmlspecialchars($data["lastname"], ENT_QUOTES, 'UTF-8');
+    if (!preg_match('/^[a-zA-Z]+$/', $data["lastname"])){
+        $error["lastname"] = "Error en el campo abizena";
+    } 
+
+	$data["city"] = htmlspecialchars($data["city"], ENT_QUOTES, 'UTF-8');
+    if (!preg_match('/^[a-zA-Z ]+$/', $data["city"])){
+        $error["city"] = "Error en el campo hiria";
+    } 
+
+	$data["stateProv"] = htmlspecialchars($data["stateProv"], ENT_QUOTES, 'UTF-8');
+    if (!preg_match('/^[a-zA-Z ]+$/', $data["stateProv"])){
+        $error["stateProv"] = "Error en el campo lurraldea";
+    } 
+
+	$data["country"] = htmlspecialchars($data["country"], ENT_QUOTES, 'UTF-8'); 
+    if (!preg_match('/^[a-zA-Z ]+$/', $data["country"])){
+        $error["country"] = "Error en el campo herrialdea";
+    } 
+
+	$data["postcode"] = htmlspecialchars($data["postcode"], ENT_QUOTES, 'UTF-8'); 
+    if (!filter_var($data["postcode"], FILTER_VALIDATE_INT)){
+		$error["postcode"] = "Error en el campo postkodea";
+    } 
+
+	$data["telephone"] = htmlspecialchars($data["telephone"], ENT_QUOTES, 'UTF-8'); 
+    if (!filter_var($data["telephone"], FILTER_VALIDATE_INT)){
+        $error["telephone"] = "Error en el campo telefonoa";
+    } 
+
+	// $pass=md5($data['password']);
+	
+	
+	if($data['password'] != $data['password2'] and strlen($data['password']) > 5){
+		$error["password"] = "Error en el campo pasahitza";
+	}
+
+	$pass = password_hash(htmlspecialchars($data['password'], ENT_QUOTES, 'UTF-8'), PASSWORD_DEFAULT);
+
+	if(!$error["email"] and !$error["firstname"] and !$error["lastname"] and !$error["city"] and !$error["stateProv"] and !$error["country"] and !$error["postcode"] and !$error["telephone"] and !$error["password"]){
+		$stmt = $conx->prepare("INSERT INTO users(username, password, izena, abizena, hiria, lurraldea, herrialdea, postakodea, telefonoa, irudia) VALUES (?,?,?,?,?,?,?,?,?,?)");
+		$stmt->bind_param("sssssssiis", $data['email'],  $pass, $data['firstname'], $data['lastname'], $data['city'], $data['stateProv'], $data['country'], $data['postcode'], $data['telephone'], $data['imagen']);
+		$stmt->execute();
+		$stmt->close();
+	
+		if ($conx->errno) {
+			die('Error: ' . $conx->error);
+		} else {
+			header("Location: index.php");
+		}
+	}
+		
+
 }
+
 ?>
 	<div class="content">
 	<br/>
@@ -64,6 +126,7 @@ if (isset($_POST['data'])) {
 				<input type="text" name="data[email]" value="<?php echo $data['email']; ?>" />
 				<?php if ($error['email']) echo '<p>', $error['email']; ?>
 			<p>
+				
 			<p>
 				<label>Izena: </label>
 				<input type="text" name="data[firstname]" value="<?php echo $data['firstname']; ?>" />
@@ -102,12 +165,12 @@ if (isset($_POST['data'])) {
 			<p>
 			<p>
 				<label>Pasahitza: </label>
-				<input type="text" name="data[password]" value="<?php echo $data['password']; ?>" />
+				<input type="password" name="data[password]" value="<?php echo $data['password']; ?>" />
 				<?php if ($error['password']) echo '<p>', $error['password']; ?>
 			<p>
             <p>
                 <label>Pasahitza errepikatu: </label>
-                <input type="text" name="data[password2]" value="<?php echo $data['password2']; ?>" />
+                <input type="password" name="data[password2]" value="<?php echo $data['password2']; ?>" />
             <p>
             <p>
                 <label>Irudia aukeratu:</label>

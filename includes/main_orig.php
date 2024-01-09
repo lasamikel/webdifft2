@@ -19,8 +19,13 @@ else{
     <table width=1000 cellpadding=10 cellspacing=10 align=center>
     <?php
     foreach($images as $pic){
-        $data = mysqli_query($conx,"SELECT * FROM produktuak WHERE pic LIKE '".$pic."'");
-        $data = mysqli_fetch_array($data);
+        $stmt = $conx->prepare("SELECT * FROM produktuak WHERE pic LIKE ?");
+        $stmt->bind_param("s", $pic);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = $result->fetch_assoc();
+        $stmt->close();
+
         ?>
 
         <tr>

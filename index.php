@@ -1,10 +1,8 @@
 <?php
-
 session_start();
 
 include("conf.php");
 include("includes/mysql.php");
-
 ?>
 
 <html>

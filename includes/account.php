@@ -10,8 +10,13 @@ if(isset($_GET['changepass'])){
     header("Location: ".$_SERVER['PHP_SELF']."?action=account");
   }else{
     $oldpass = $_SESSION['password'];
-    $newpass = md5($_POST['newpass']);
-    mysqli_query($conx,"UPDATE users SET password='".$newpass."' WHERE password='".$oldpass."'");
+    // $newpass = md5($_POST['newpass']);
+    $newpass = password_hash(htmlspecialchars($_POST['newpass'], ENT_QUOTES, 'UTF-8'), PASSWORD_DEFAULT);
+    $stmt = $conx->prepare('UPDATE users SET password=? WHERE password=?');
+    $stmt->bind_param("ss", $newpass,  $oldpass);
+    $stmt->execute();
+    $stmt->close();
+
     session_destroy();
     header("Location: ".$_SERVER['PHP_SELF']);
   }
@@ -22,7 +27,10 @@ elseif(isset($_GET['adduser']) && $_SESSION['username']=='admin'){
     $newuser = $_POST['newuser'];
     $newuserpass = md5($_POST['newuserpass']);
 
-  mysqli_query($conx,"INSERT INTO users (username,password) VALUES ('".$newuser."','".$newuserpass."')");
+  $stmt = $conx->prepare("INSERT INTO users (username,password) VALUES (?,?)");
+  $stmt->bind_param("ss", $newuser,  $newuserpass);
+  $stmt->execute();
+  $stmt->close();
 
   header("Location: ".$_SERVER['PHP_SELF']."?action=account");
 
@@ -33,7 +41,13 @@ elseif(isset($_GET['deleteuser']) && $_SESSION['username']=='admin'){
     header("Location: ".$_SERVER['PHP_SELF']."?action=account");
   }
   else{
-      mysqli_query($conx,"DELETE FROM users WHERE username='".$_GET['deleteuser']."'");
+
+      $stmt = $conx->prepare("DELETE FROM users WHERE username=?");
+      $stmt->bind_param("s", $_GET['deleteuser']);
+      $stmt->execute();
+      $stmt->close();
+
+
     header("Location: ".$_SERVER['PHP_SELF']."?action=account");
   }
 
@@ -88,7 +102,11 @@ else{
                               if($user['username']==$_SESSION['username']){
                                 echo "<del>[delete]</del>&nbsp;";
                               }else{
-                                echo "<a href=".$_SERVER['PHP_SELF']."?action=account&deleteuser=".$user['username'].">[delete]</a>&nbsp;";
+                                // echo "<a href=".$_SERVER['PHP_SELF']."?action=account&deleteuser=".$user['username'].">[delete]</a>&nbsp;";
+
+                                $deleteLink = htmlentities($_SERVER['PHP_SELF'] . "?action=account&deleteuser=" . $user['username']);
+                                echo "<a href='" . $deleteLink . "'>[delete]</a>&nbsp;";
+
                               }
                             echo "</td>";
                             echo "</tr>";
